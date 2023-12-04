@@ -4,13 +4,15 @@ import seaborn
 import torch
 import matplotlib.pyplot as plt
 import random
-from dataset.vocab import WordVocab
-
+import sys
+sys.path.append('../')
+from dataset import *
+from dataset import BERTDataset,collate_mlm
 
 def random_word(sentence, vocab):
     tokens = sentence.split()
     tokens_len = [len(token) for token in tokens]
-    chars = [char for char in sentence]
+    chars = tokens
     output_label = []
 
     for i, char in enumerate(chars):
@@ -56,8 +58,8 @@ def Modelload(path):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-m", "--model_path", required=True, type=str, help="model of pretrain")
-    parser.add_argument("-v", "--vocab_path", required=True, type=str, help="path of vocab")
+    parser.add_argument("-m", "--model_path", default = "output/bert.model/model_mlm/mlm_ep1 .model", required=False, type=str, help="model of pretrain")
+    parser.add_argument("-v", "--vocab_path", default = "data/category.vocab",required=False, type=str, help="path of vocab")
     args = parser.parse_args()
 
     model_path = args.model_path
@@ -65,19 +67,42 @@ def main():
 
     vocab = WordVocab.load_vocab(vocab_path)
 
-    model = torch.load(model_path)
+    model = torch.load(model_path).to("cuda:0")
     model.eval()
 
-    sent = '_I _l _o _v _e _C _h _i _n _a _!'.split()
+    d = BERTDataset("./data/category_train.txt", vocab = vocab)
 
-    text = 'I love China!'
-    sent1, label = random_word(text, vocab)
-    sent1 = torch.tensor(sent1).long().unsqueeze(0)
-    mask_lm_output, attn_list = model.forward(sent1)
 
-    chars = []
-    for char in sent:
-        chars.append(vocab.char2index(char))
+    batch = [d.__getitem__(i) for i in range(5000)] 
+    collated = collate_mlm(batch)
+
+
+    collated = {key: value.to("cuda:0") for key, value in collated.items()}
+
+    mask_lm_output, attn_list = model.forward(collated["mlm_input"], collated["input_position"])
+
+    prediction = torch.argmax(mask_lm_output, dim=2)
+    
+    
+    batch_chars = []
+    batch_size, seq_len = prediction.shape
+    correct = 0
+    masked_counts = 0
+    for b in range(batch_size):
+        print(f"Batch # {b}")
+        char_predictions = vocab.index2char(prediction[b].tolist())
+        label = collated["mlm_label"][b]
+        masked_index = torch.nonzero(collated["mlm_label"][b]).reshape(1, -1)[0]
+
+        for idx in masked_index:
+            masked_counts += 1
+            if vocab.index2char(label[idx].item()) == char_predictions[idx]:
+                correct += 1
+            print(f"Masked label: {vocab.index2char(label[idx].item())} --> Prediction: {char_predictions[idx]}")
+    print(f"Accuracy: {correct/masked_counts}")
+    import pdb
+    pdb.set_trace()
+    
 
     for layer in range(3):
         fig, axs = plt.subplots(1, 4, figsize=(20, 10))

@@ -19,22 +19,22 @@ def train():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-c", "--train_dataset", required=True, type=str, help="train dataset for train bert")
-    parser.add_argument("-t", "--valid_dataset", required=True, type=str, help="valid set for evaluate train set")
-    parser.add_argument("-v", "--vocab_path", required=True, type=str, help="built vocab model path with vocab")
-    parser.add_argument("-o", "--output_path", required=True, type=str, help="output/bert.model")
+    parser.add_argument("-c", "--train_dataset", default="./data/category_train.txt", required=False, type=str, help="train dataset for train bert")
+    parser.add_argument("-t", "--valid_dataset",default="./data/category_test.txt", required=False, type=str, help="valid set for evaluate train set")
+    parser.add_argument("-v", "--vocab_path", default="./data/category.vocab", required=False, type=str, help="built vocab model path with vocab")
+    parser.add_argument("-o", "--output_path",default="output/bert.model", required=False, type=str, help="output/bert.model")
 
-    parser.add_argument("-w", "--num_workers", type=int, default=0, help="dataloader worker size")
+    parser.add_argument("-w", "--num_workers", type=int, default=20, help="dataloader worker size")
     parser.add_argument("--with_cuda", type=bool, default=True, help="training with CUDA: true, or false")
     parser.add_argument("--corpus_lines", type=int, default=None, help="total number of lines in corpus")
-    parser.add_argument("--cuda_devices", type=int, nargs='+', default=[0, 1, 2, 3], help="CUDA device ids")
+    parser.add_argument("--cuda_devices", type=int, nargs='+', default=[0], help="CUDA device ids")
     parser.add_argument("--on_memory", type=bool, default=True, help="Loading on memory: true or false")
     parser.add_argument('--seed', type=int, default=42, help="random seed for initialization")
 
     args = parser.parse_args()
     set_seed(args)
     paths = Paths(args.output_path)
-
+    print(args.cuda_devices)
     print("Loading Vocab", args.vocab_path)
     vocab = WordVocab.load_vocab(args.vocab_path)
     print("Vocab Size: ", vocab.vocab_size)
@@ -57,7 +57,7 @@ def train():
 
     print("Creating BERT Trainer")
     trainer = BERTTrainer(bert, vocab.vocab_size, train_dataloader=train_data_loader, test_dataloader=valid_data_loader,
-                          with_cuda=args.with_cuda, cuda_devices=args.cuda_devices, args=args, path=paths)
+                          with_cuda=args.with_cuda, cuda_devices=0, args=args, path=paths)
 
     print("Training Start")
 

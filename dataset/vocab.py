@@ -72,7 +72,7 @@ def load_data(path):
     with open(path, 'r', encoding='utf-8') as fin:
         for line in fin:
             if line != '':
-                char_lst.append(line.strip())
+                char_lst += line.strip().replace('"','').split(",")
         return char_lst
 
 
@@ -81,20 +81,25 @@ def build():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--vocab_path", required=None, type=str)
-    parser.add_argument("-o", "--output_path", default='./data/', type=str)
+    parser.add_argument("-c", "--vocab_path", default='./data/category_dataset.jsonl',required=None, type=str)
+    parser.add_argument("-o", "--output_path", default='./data/category.vocab', type=str)
     parser.add_argument("-s", "--vocab_size", type=int, default=None)
     parser.add_argument("-e", "--encoding", type=str, default="utf-8")
     parser.add_argument("-m", "--min_freq", type=int, default=1)
     args = parser.parse_args()
 
-    # char_lst = load_data(args.vocab_path)
-    vocab = WordVocab(symbols)
+    char_lst = load_data(args.vocab_path)
+    
+    vocab = WordVocab(char_lst)
     vocab.save_vocab(args.output_path)
     print("保存vocab成功！")
 
 if __name__ == '__main__':
+    
     build()
+    import pdb
+
+    pdb.set_trace()
 
 
 

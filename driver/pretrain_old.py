@@ -81,9 +81,9 @@ class BERTTrainer:
         self.valid_attn_layer_writer = SummaryWriter(f'{self.path.runs_path}/valid/valid_attn_layer')
 
         # wandb
-        wandb.init(project="bert-long-run")
+        wandb.init(project="new-PM-model-comparison")
         wandb.watch(self.model)
-        print(f"Num of layers: {hp.attn_layers}")
+
         self.num_params()
 
     def accuracy(self, predictions, input):
@@ -96,7 +96,6 @@ class BERTTrainer:
         correct_3 = 0
         correct_5 = 0
         total = 0
-        correct = 0
         
         for b in range(batch_size):
             masked_index = torch.nonzero(input["mlm_label"][b]).reshape(1, -1)[0]
@@ -106,22 +105,19 @@ class BERTTrainer:
             
             for idx in masked_index:
                 total += 1
-                if true_labels[idx] == pred[b][idx]:
-                    correct += 1
 
-                if true_labels[idx] in b_pred_labels_top_5[idx][:1]:
+                if true_labels[idx] in b_pred_labels_top_5[:1]:
                     correct_1 +=1
 
-                if true_labels[idx] in b_pred_labels_top_5[idx][:3]:
+                if true_labels[idx] in b_pred_labels_top_5[:3]:
                     correct_3 +=1
 
-                if true_labels[idx] in b_pred_labels_top_5[idx][:5]:
+                if true_labels[idx] in b_pred_labels_top_5[:5]:
                     correct_5 +=1
 
         hit_1 = correct_1/total
         hit_3 = correct_3/total
         hit_5 = correct_5/total
-
         return hit_1, hit_3, hit_5
     
     def train(self):
@@ -142,7 +138,6 @@ class BERTTrainer:
                 running_hit1 = []
                 running_hit3 = []
                 running_hit5 = []
-    
                 for i, data in data_iter:
 
                     self.step += 1
@@ -405,5 +400,11 @@ class BERTTrainer:
         self.model.to(self.device)
         print("EP:%d Model Saved on:" % epoch, output_path)
         return output_path
+
+
+
+
+
+
 
 

@@ -67,7 +67,7 @@ class BERTDataset(Dataset):
 
         t = self.lines[item]
         t1_random, t1_label = self.random_word(t)
-
+        
         # [CLS] tag = SOS tag, [SEP] tag = EOS tag
         mlm_input = [self.vocab.sos_index] + t1_random + [self.vocab.eos_index] #  3，1，2
         mlm_label = [self.vocab.pad_index] + t1_label + [self.vocab.pad_index]
@@ -77,11 +77,12 @@ class BERTDataset(Dataset):
 
     def random_word(self, sentence):
         tokens = sentence.split()
+        
         tokens_len = [len(token) for token in tokens]
-        chars = [char for char in sentence]
+        chars = tokens
         output_label = []
 
-        for i, char in enumerate(chars):
+        for i, char in enumerate(tokens):
             prob = random.random()
             if prob < 0.15:
                 prob /= 0.15
